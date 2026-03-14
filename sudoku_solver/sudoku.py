@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import math
+from typing import Any, List, Union
+
 import numpy as np
+from numpy.typing import NDArray
 
 
 class Sudoku:
-    def __init__(self, board):
+    def __init__(self, board: Union[str, List[List[int]], NDArray[np.float64]]) -> None:
         """Initialize variables, assign input board to self.board"""
         self.list_possibles = [[np.array([]) for j in range(9)] for i in range(9)]
         self.complete = np.reshape(np.arange(1, 10), 9)
@@ -18,11 +23,11 @@ class Sudoku:
             for j in range(9):
                 if board[i][j] in (1, 2, 3, 4, 5, 6, 7, 8, 9):
                     self.board[i][j] = board[i][j]
-                    self.num_givens = self.num_givens + 1
+                    self.num_givens += 1
 
         self.calc_possibles()
 
-    def board_parse(self, sboard):
+    def board_parse(self, sboard: str) -> NDArray[np.float64]:
         """Parse string into 2d array"""
         board = np.zeros((9, 9))
         i = 0
@@ -31,10 +36,10 @@ class Sudoku:
             icol = i % 9
             if sboard[i] in "123456789":
                 board[irow, icol] = int(sboard[i])
-            i = i + 1
+            i += 1
         return board
 
-    def display(self):
+    def display(self) -> None:
         """Display these values as a 2-D grid."""
         separator = "+ ".join(["- " * 3] * 3)
         for irow in range(9):
@@ -54,27 +59,27 @@ class Sudoku:
                 print(separator)
         print()
 
-    def get_row(self, irow):
+    def get_row(self, irow: int) -> NDArray[np.float64]:
         """Return 1d array for given row index"""
         return np.reshape(self.board[irow, :], 9)
 
-    def get_column(self, icol):
+    def get_column(self, icol: int) -> NDArray[np.float64]:
         """Return 1d array for given column index"""
         return np.reshape(self.board[:, icol], 9)
 
-    def get_box(self, ibox):
+    def get_box(self, ibox: int) -> NDArray[np.float64]:
         """Return 1d array for given box index"""
         row = math.floor(float(ibox) / 3.0) * 3
         col = 3 * (ibox % 3)
         return np.reshape(self.board[row : row + 3, col : col + 3], 9)
 
-    def box_index(self, irow, icol):
+    def box_index(self, irow: int, icol: int) -> int:
         """Return index[0,8] of the box for a given square"""
         sq_row = math.floor(float(irow) / 3.0)
         sq_col = math.floor(float(icol) / 3.0)
         return sq_row * 3 + sq_col
 
-    def square_value(self, irow, icolumn):
+    def square_value(self, irow: int, icolumn: int) -> float:
         """Returns the value of a given square on the board"""
         return self.board[irow, icolumn]
 
@@ -83,7 +88,7 @@ class Sudoku:
         mask = np.isin(self.complete, ar, invert=True)
         return self.complete[mask]
 
-    def possibles(self, irow, icol):
+    def possibles(self, irow: int, icol: int) -> NDArray[Any]:
         """Returns the list of possible values for given coordinates"""
         return self.list_possibles[irow][icol]
 
@@ -124,7 +129,7 @@ class Sudoku:
         icol = 3 * (ibox % 3) + (i % 3)
         return (irow, icol)
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """Checks if board and possible values are valid."""
         for i in range(9):
             row = self.get_row(i)
@@ -162,7 +167,7 @@ class Sudoku:
                         candidates = True
                     elif n in self.possibles(irow, i):
                         candidates = True
-                    i = i + 1
+                    i += 1
                 if not candidates:
                     return False
         for icol in range(9):
@@ -175,7 +180,7 @@ class Sudoku:
                         candidates = True
                     elif n in self.possibles(i, icol):
                         candidates = True
-                    i = i + 1
+                    i += 1
                 if not candidates:
                     return False
         for ibox in range(9):
@@ -189,12 +194,12 @@ class Sudoku:
                         candidates = True
                     elif n in self.possibles(irow, icol):
                         candidates = True
-                    i = i + 1
+                    i += 1
                 if not candidates:
                     return False
         return True
 
-    def is_complete(self):
+    def is_complete(self) -> bool:
         """Returns if we have valid board with no blanks"""
         return self.is_valid() and self.board[self.board == 0].size == 0
 
@@ -215,7 +220,7 @@ class Sudoku:
             for icol in range(9):
                 if self.square_value(irow, icol) == 0:
                     for p in self.possibles(irow, icol):
-                        pos[p - 1][icol] = pos[p - 1][icol] + 1
+                        pos[p - 1][icol] += 1
             pos_sums = pos.sum(axis=1)
             for val, p in enumerate(pos_sums):
                 if p == 1:
@@ -227,7 +232,7 @@ class Sudoku:
             for irow in range(9):
                 if self.square_value(irow, icol) == 0:
                     for p in self.possibles(irow, icol):
-                        pos[p - 1][irow] = pos[p - 1][irow] + 1
+                        pos[p - 1][irow] += 1
             pos_sums = pos.sum(axis=1)
             for val, p in enumerate(pos_sums):
                 if p == 1:
@@ -240,7 +245,7 @@ class Sudoku:
                 irow, icol = self.box_to_puzzle(ibox, jbox)
                 if self.square_value(irow, icol) == 0:
                     for p in self.possibles(irow, icol):
-                        pos[p - 1][jbox] = pos[p - 1][jbox] + 1
+                        pos[p - 1][jbox] += 1
             pos_sums = pos.sum(axis=1)
             for val, p in enumerate(pos_sums):
                 if p == 1:
@@ -249,14 +254,11 @@ class Sudoku:
                     self.set_square_value(irow, icol, val + 1)
             self.simple_solve()
 
-    def _solve(self, verbose=True):
+    def _solve(self) -> str:
         """Main solve routine. Returns status string."""
         self.simple_solve()
         if self.is_complete():
-            status = "Unique Solution"
-            if verbose:
-                print(status)
-            return status
+            return "Unique Solution"
 
         init_state = np.zeros((9, 9))
         while not self.is_complete() and not np.array_equal(init_state, self.board):
@@ -264,10 +266,7 @@ class Sudoku:
             self.uni_possibles_solve()
 
         if self.is_complete():
-            status = "Unique Solution"
-            if verbose:
-                print(status)
-            return status
+            return "Unique Solution"
 
         valid = self.is_valid()
         complete = self.is_complete()
@@ -280,10 +279,8 @@ class Sudoku:
         else:
             status = 'Invalid Puzzle ("unknown")'
 
-        if verbose:
-            print(status)
         return status
 
-    def solve(self, verbose=True):
-        """Main solve routine. Prints status when verbose=True. Returns status string."""
-        return self._solve(verbose=verbose)
+    def solve(self) -> str:
+        """Main solve routine. Returns status string."""
+        return self._solve()

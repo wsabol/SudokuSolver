@@ -7,20 +7,26 @@ Board formats supported:
 - 2D numpy array
 """
 
+from __future__ import annotations
+
+from typing import Any, Dict, List, Union
+
 from sudoku_solver.sudoku import Sudoku
 
 __all__ = ["Sudoku", "solve"]
 
 
-def solve(board):
+def solve(board: Union[str, List[List[int]], Any]) -> Dict[str, Any]:
     """
-    Solve a Sudoku puzzle. API-friendly: returns data, no printing.
+    Main library API: solve a Sudoku puzzle and return structured data.
+
+    Does not print; use Sudoku.solve() for interactive output.
 
     Args:
         board: 81-char string, list of 9 lists, or 2D array. Blanks as 0, '.', etc.
 
     Returns:
-        dict with keys:
+        Dict with keys:
             - board: 9x9 list of ints (solved puzzle)
             - status: "Unique Solution" | "Invalid Puzzle (...)"
     """

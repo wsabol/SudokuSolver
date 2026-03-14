@@ -1,53 +1,39 @@
 import argparse
-import json
 import sys
+import json
 
 from sudoku_solver import Sudoku
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Solve Sudoku puzzles. Accepts JSON file with puzzles or raw board."
+        description="Solve a Sudoku puzzle. Provide an 81-char board string."
     )
     parser.add_argument(
-        "input",
-        nargs="?",
-        default=None,
-        help="Path to JSON file with puzzles (array of {title, board, result}) or 81-char board string",
+        "--board",
+        "-b",
+        required=True,
+        help="81-char board string (0 or . for blanks)",
     )
     parser.add_argument(
-        "--quiet",
-        "-q",
+        "--json",
+        "-j",
         action="store_true",
-        help="Only output the solved board, no status messages",
+        help="Output as json with status messages",
     )
     args = parser.parse_args()
 
-    if args.input is None:
-        parser.print_help()
-        sys.exit(0)
+    board = args.board.strip()
+    if len(board) != 81:
+        print(f"Error: board must be 81 characters, got {len(board)}", file=sys.stderr)
+        sys.exit(1)
 
-    inp = args.input
-    is_file = len(inp) != 81 or "/" in inp or "\\" in inp or inp.endswith(".json")
+    s = Sudoku(board)
+    status = s.solve()
 
-    if is_file:
-        try:
-            with open(inp) as f:
-                puzzles = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        for p in puzzles:
-            print(p["title"])
-            print(p["result"])
-            print("---")
-            s = Sudoku(p["board"])
-            s.solve(verbose=not args.quiet)
-            s.display()
-            print()
+    if args.json:
+        print(json.dumps({"status": status, "board": s.board.astype(int).tolist()}, indent=2, ensure_ascii=False))
     else:
-        s = Sudoku(inp)
-        s.solve(verbose=not args.quiet)
         s.display()
 
 
