@@ -48,7 +48,7 @@ def main() -> None:
 
         if move is not None:
             s.set_square_value(move[0], move[1], move[2])
-            message = f"place {move[2]} in row {move[0]} column {move[1]}"
+            message = f"place {move[2]} in row {move[0] + 1} column {move[1] + 1}"
         else:
             message = "No more moves"
 
