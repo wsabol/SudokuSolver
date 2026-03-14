@@ -93,6 +93,36 @@ def test_invalid_no_unique_solution() -> None:
     assert result["status"] == 'Invalid Puzzle ("no unique solution")'
 
 
+# --- Sudoku class / get_next_move ---
+
+
+def test_get_next_move_returns_tuple_when_move_exists() -> None:
+    board = "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
+    s = Sudoku(board)
+    move = s.get_next_move()
+    assert move is not None
+    row, col, value = move
+    assert 0 <= row <= 8 and 0 <= col <= 8 and 1 <= value <= 9
+    assert s.board[row, col] == 0
+
+
+def test_get_next_move_returns_none_when_complete() -> None:
+    board = "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
+    s = Sudoku(board)
+    s.solve()
+    assert s.get_next_move() is None
+
+
+def test_get_next_move_can_apply_and_progress() -> None:
+    board = "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
+    s = Sudoku(board)
+    initial_empty = (s.board == 0).sum()
+    move = s.get_next_move()
+    assert move is not None
+    s.set_square_value(move[0], move[1], move[2])
+    assert (s.board == 0).sum() == initial_empty - 1
+
+
 # --- Sudoku class / display ---
 
 
@@ -147,3 +177,59 @@ def test_cli_json_output(capsys: pytest.CaptureFixture[str]) -> None:
     assert len(data["board"]) == 9
     flat = [c for row in data["board"] for c in row]
     assert 0 not in flat
+
+
+def test_cli_hint_returns_message(capsys: pytest.CaptureFixture[str]) -> None:
+    from sudoku_solver.cli import main
+
+    board = "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
+    sys.argv = ["sudoku-solve", "--board", board, "--hint"]
+    with pytest.raises(SystemExit):
+        main()
+    captured = capsys.readouterr()
+    assert "place" in captured.out
+    assert "row" in captured.out
+    assert "column" in captured.out
+
+
+def test_cli_hint_json_output(capsys: pytest.CaptureFixture[str]) -> None:
+    from sudoku_solver.cli import main
+
+    board = "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
+    sys.argv = ["sudoku-solve", "--board", board, "--hint", "--json"]
+    with pytest.raises(SystemExit):
+        main()
+    captured = capsys.readouterr()
+    data = json.loads(captured.out)
+    assert "status" in data
+    assert "move" in data
+    assert "message" in data
+    assert "board" in data
+    assert data["move"] is not None
+    assert data["move"]["row"] in range(9)
+    assert data["move"]["column"] in range(9)
+    assert data["move"]["value"] in range(1, 10)
+
+
+def test_cli_hint_no_more_moves(capsys: pytest.CaptureFixture[str]) -> None:
+    from sudoku_solver.cli import main
+
+    board = "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
+    sys.argv = ["sudoku-solve", "--board", board, "--hint"]
+    with pytest.raises(SystemExit):
+        main()
+    captured = capsys.readouterr()
+    assert "No more moves" in captured.out
+
+
+def test_cli_hint_no_more_moves_json(capsys: pytest.CaptureFixture[str]) -> None:
+    from sudoku_solver.cli import main
+
+    board = "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
+    sys.argv = ["sudoku-solve", "--board", board, "--hint", "--json"]
+    with pytest.raises(SystemExit):
+        main()
+    captured = capsys.readouterr()
+    data = json.loads(captured.out)
+    assert data["move"] is None
+    assert data["message"] == "No more moves"

@@ -203,59 +203,108 @@ class Sudoku:
         """Returns if we have valid board with no blanks"""
         return self.is_valid() and self.board[self.board == 0].size == 0
 
-    def simple_solve(self):
-        """Naked Singles Algorithm - find squares with only one possible value"""
-        for _ in range(self.board[self.board == 0].size):
-            for i in range(9):
-                for j in range(9):
-                    if self.square_value(i, j) == 0:
-                        p = self.possibles(i, j)
-                        if p.size == 1:
-                            self.set_square_value(i, j, p[0])
-
-    def uni_possibles_solve(self):
-        """Hidden Singles Algorithm - find unique candidates per row/column/box"""
+    def _find_naked_single(self) -> tuple[int, int, int] | None:
+        """Returns (row, col, value) for first cell with exactly one possible value, or None."""
         for irow in range(9):
-            pos = np.zeros((9, 9))
             for icol in range(9):
                 if self.square_value(irow, icol) == 0:
-                    for p in self.possibles(irow, icol):
-                        pos[p - 1][icol] += 1
-            pos_sums = pos.sum(axis=1)
-            for val, p in enumerate(pos_sums):
-                if p == 1:
-                    index = np.where(pos[val] == 1)
-                    self.set_square_value(irow, index[0][0], val + 1)
-            self.simple_solve()
+                    p = self.possibles(irow, icol)
+                    if p.size == 1:
+                        return (irow, icol, int(p[0]))
+        return None
+
+    def _find_hidden_single_in_row(self, irow: int) -> tuple[int, int, int] | None:
+        """Returns (row, col, value) for first hidden single in row, or None."""
+        pos = np.zeros((9, 9))
         for icol in range(9):
-            pos = np.zeros((9, 9))
-            for irow in range(9):
-                if self.square_value(irow, icol) == 0:
-                    for p in self.possibles(irow, icol):
-                        pos[p - 1][irow] += 1
-            pos_sums = pos.sum(axis=1)
-            for val, p in enumerate(pos_sums):
-                if p == 1:
-                    index = np.where(pos[val] == 1)
-                    self.set_square_value(index[0][0], icol, val + 1)
-            self.simple_solve()
+            if self.square_value(irow, icol) == 0:
+                for p in self.possibles(irow, icol):
+                    pos[p - 1][icol] += 1
+        for val in range(9):
+            if pos[val].sum() == 1:
+                index = int(np.where(pos[val] == 1)[0][0])
+                return (irow, index, val + 1)
+        return None
+
+    def _find_hidden_single_in_col(self, icol: int) -> tuple[int, int, int] | None:
+        """Returns (row, col, value) for first hidden single in column, or None."""
+        pos = np.zeros((9, 9))
+        for irow in range(9):
+            if self.square_value(irow, icol) == 0:
+                for p in self.possibles(irow, icol):
+                    pos[p - 1][irow] += 1
+        for val in range(9):
+            if pos[val].sum() == 1:
+                index = int(np.where(pos[val] == 1)[0][0])
+                return (index, icol, val + 1)
+        return None
+
+    def _find_hidden_single_in_box(self, ibox: int) -> tuple[int, int, int] | None:
+        """Returns (row, col, value) for first hidden single in box, or None."""
+        pos = np.zeros((9, 9))
+        for jbox in range(9):
+            irow, icol = self.box_to_puzzle(ibox, jbox)
+            if self.square_value(irow, icol) == 0:
+                for p in self.possibles(irow, icol):
+                    pos[p - 1][jbox] += 1
+        for val in range(9):
+            if pos[val].sum() == 1:
+                index = int(np.where(pos[val] == 1)[0][0])
+                irow, icol = self.box_to_puzzle(ibox, index)
+                return (irow, icol, val + 1)
+        return None
+
+    def get_next_move(self) -> tuple[int, int, int] | None:
+        """Return the next logical move (row, col, value), or None if complete or stuck.
+
+        Uses naked singles and hidden singles. Does not mutate the board.
+        """
+        if self.is_complete() or not self.is_valid():
+            return None
+
+        move = self._find_naked_single()
+        if move is not None:
+            return move
+
+        for irow in range(9):
+            move = self._find_hidden_single_in_row(irow)
+            if move is not None:
+                return move
+        for icol in range(9):
+            move = self._find_hidden_single_in_col(icol)
+            if move is not None:
+                return move
         for ibox in range(9):
-            pos = np.zeros((9, 9))
-            for jbox in range(9):
-                irow, icol = self.box_to_puzzle(ibox, jbox)
-                if self.square_value(irow, icol) == 0:
-                    for p in self.possibles(irow, icol):
-                        pos[p - 1][jbox] += 1
-            pos_sums = pos.sum(axis=1)
-            for val, p in enumerate(pos_sums):
-                if p == 1:
-                    index = np.where(pos[val] == 1)[0][0]
-                    irow, icol = self.box_to_puzzle(ibox, index)
-                    self.set_square_value(irow, icol, val + 1)
-            self.simple_solve()
+            move = self._find_hidden_single_in_box(ibox)
+            if move is not None:
+                return move
+
+        return None
+
+    def simple_solve(self) -> None:
+        """Naked Singles Algorithm - find squares with only one possible value"""
+        while (move := self._find_naked_single()) is not None:
+            self.set_square_value(move[0], move[1], move[2])
+
+    def uni_possibles_solve(self) -> None:
+        """Hidden Singles Algorithm - find unique candidates per row/column/box"""
+        for irow in range(9):
+            while (move := self._find_hidden_single_in_row(irow)) is not None:
+                self.set_square_value(move[0], move[1], move[2])
+                self.simple_solve()
+        for icol in range(9):
+            while (move := self._find_hidden_single_in_col(icol)) is not None:
+                self.set_square_value(move[0], move[1], move[2])
+                self.simple_solve()
+        for ibox in range(9):
+            while (move := self._find_hidden_single_in_box(ibox)) is not None:
+                self.set_square_value(move[0], move[1], move[2])
+                self.simple_solve()
 
     def _solve(self) -> str:
         """Main solve routine. Returns status string."""
+        if not self.is_valid():
+            return 'Invalid Puzzle ("no solution")'
         self.simple_solve()
         if self.is_complete():
             return "Unique Solution"

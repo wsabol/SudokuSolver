@@ -16,13 +16,17 @@ pip install -r requirements.txt
 
 ```bash
 # Solve a board (81-char string)
-sudoku-solve --board "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
-sudoku-solve -b "000010080302607000070000003080070500004000600003050010200000050000705108060040000" -q   # quiet
+sudoku-solve --board 000010080302607000070000003080070500004000600003050010200000050000705108060040000
+sudoku-solve -b 000010080302607000070000003080070500004000600003050010200000050000705108060040000
+
+# Get next hint only (single move, does not solve the puzzle)
+sudoku-solve --board 000010080302607000070000003080070500004000600003050010200000050000705108060040000 --hint
+sudoku-solve -b 000010080... -n --json   # hint with JSON output
 ```
 
 ### Board formats
 
-- **81-char string**: `"00001008..."` or `"...6.2...."` (blanks as `0` or `.`)
+- **81-char string**: `00001008...` or `...6.2....` (blanks as `0` or `.`)
 - **2D list**: `[[5,8,6,0,...], ...]`
 
 ### Python usage
@@ -30,9 +34,17 @@ sudoku-solve -b "000010080302607000070000003080070500004000600003050010200000050
 ```python
 from sudoku_solver import Sudoku
 
+# Solve a puzzle
 s = Sudoku("000010080302607000070000003080070500004000600003050010200000050000705108060040000")
 s.solve()
 s.display()
+
+# Get the next move (hint) without solving
+s2 = Sudoku("000010080302607000070000003080070500004000600003050010200000050000705108060040000")
+move = s2.get_next_move()  # (row, col, value) or None
+if move:
+    row, col, value = move
+    s2.set_square_value(row, col, value)
 ```
 
 ## Tests
