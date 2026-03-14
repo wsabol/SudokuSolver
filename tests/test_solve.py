@@ -55,12 +55,6 @@ def test_solve_accepts_dots_string() -> None:
     assert result["status"] == "Unique Solution"
 
 
-def test_solve_silent_no_print() -> None:
-    s = Sudoku("000010080302607000070000003080070500004000600003050010200000050000705108060040000")
-    status = s.solve(verbose=False)
-    assert status == "Unique Solution"
-
-
 # --- test_cases.json: all cases ---
 
 
@@ -104,7 +98,7 @@ def test_invalid_no_unique_solution() -> None:
 
 def test_display_output() -> None:
     s = Sudoku("000010080302607000070000003080070500004000600003050010200000050000705108060040000")
-    s.solve(verbose=False)
+    s.solve()
     out = StringIO()
     old_stdout = sys.stdout
     sys.stdout = out
@@ -136,15 +130,20 @@ def test_cli_solves_board(capsys: pytest.CaptureFixture[str]) -> None:
     sys.argv = ["sudoku-solve", "--board", board]
     main()
     captured = capsys.readouterr()
-    assert "Unique Solution" in captured.out
     assert "4" in captured.out  # solved digits
 
 
-def test_cli_quiet_mode(capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_json_output(capsys: pytest.CaptureFixture[str]) -> None:
     from sudoku_solver.cli import main
+
     board = "000010080302607000070000003080070500004000600003050010200000050000705108060040000"
-    sys.argv = ["sudoku-solve", "--board", board, "-q"]
+    sys.argv = ["sudoku-solve", "--board", board, "--json"]
     main()
     captured = capsys.readouterr()
-    assert "Unique Solution" not in captured.out
-    assert "4" in captured.out  # board output only
+    data = json.loads(captured.out)
+    assert "status" in data
+    assert "board" in data
+    assert data["status"] == "Unique Solution"
+    assert len(data["board"]) == 9
+    flat = [c for row in data["board"] for c in row]
+    assert 0 not in flat

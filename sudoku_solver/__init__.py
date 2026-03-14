@@ -31,7 +31,7 @@ def solve(board: Union[str, List[List[int]], Any]) -> Dict[str, Any]:
             - status: "Unique Solution" | "Invalid Puzzle (...)"
     """
     s = Sudoku(board)
-    status = s._solve(verbose=False)
+    status = s._solve()
     return {
         "board": s.board.astype(int).tolist(),
         "status": status,
