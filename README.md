@@ -1,6 +1,6 @@
 # Sudoku Solver
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/wsabol/sudoku_solver/actions/workflows/ci.yml/badge.svg)](https://github.com/wsabol/sudoku_solver/actions/workflows/ci.yml)
 
 A command-line Sudoku solver with support for string, list, and numpy board formats. Test cases and error handling from [Sudopedia](http://sudopedia.enjoysudoku.com/Test_Cases.html).
 
